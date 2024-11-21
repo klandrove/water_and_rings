@@ -492,7 +492,7 @@ function updatePhysics( deltaTime ){
 
 const streamSettings  = {
     origin: { x: -28.5, y: -20, z: 0 },
-    radius: 5.5, // Radius of the circular column
+    radius: 6, // Radius of the circular column
     height: 50, // Height of the stream
     forceStrength: 0, // Upward force magnitude
     direction: { x: 0.1, y: 1, z: 0 },
@@ -500,7 +500,7 @@ const streamSettings  = {
 
 const streamSettingsR  = {
     origin: { x: 28.5, y: -20, z: 0 },
-    radius: 5.5, // Radius of the circular column
+    radius: 6, // Radius of the circular column
     height: 50, // Height of the stream
     forceStrength: 0, // Upward force magnitude
     direction: { x: -0.1, y: 1, z: 0 },
@@ -654,7 +654,7 @@ function createSlides() {
 
     // Position the slides symmetrically at the bottom
     const slideOffset = 11; // Adjust to place the slides symmetrically
-    const slideHeight = -10; // Adjust for placement at the bottom
+    const slideHeight = -8; // Adjust for placement at the bottom
     const slideAngle = Math.PI / 6; // 30 degrees incline
 
     // Left slide
