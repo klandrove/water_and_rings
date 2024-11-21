@@ -99,8 +99,8 @@ function setupGraphics(){
 
     renderer.shadowMap.enabled = true;
 
-    createAngledStreamVisualization();
-    createSecondStreamVisualization();
+    //createAngledStreamVisualization();
+    //createSecondStreamVisualization();
     createBottomBlock();
     createTopBlock();
     createHollowBoxConnection();
