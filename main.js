@@ -10,14 +10,14 @@ const baseGeometry = new THREE.BoxGeometry( 5, 1, 1 );
 const baseMaterial = new THREE.MeshStandardMaterial( {color: 0x4eff45} ); 
 const baseCube = new THREE.Mesh( baseGeometry, baseMaterial ); 
 scene.add( baseCube );
-baseCube.position.y = -1.5;
+baseCube.position.y = -1.3;
 baseCube.position.z = 2;
 
-const topGeometry = new THREE.BoxGeometry( 5, 0.1, 0.3 ); 
+const topGeometry = new THREE.BoxGeometry( 5, 0.8, 0.3 ); 
 const topMaterial = new THREE.MeshStandardMaterial( {color: 0x4eff45} ); 
 const topCube = new THREE.Mesh( topGeometry, topMaterial ); 
 scene.add( topCube );
-topCube.position.y = 1.5;
+topCube.position.y = 1.8;
 topCube.position.z = 2;
 
 // Using THREE.TorusGeometry for geometry
@@ -43,10 +43,10 @@ light.position.set(0, 10, 10);
 scene.add(light);
 
 // Create multiple donuts of different colors and positions
-createDonut(0xff6347, { x: 0, y: -1, z: 0 });
-createDonut(0x00ff00, { x: 2, y: -1, z: 0 }); 
-createDonut(0x0000ff, { x: -2, y: -1, z: 0 }); 
-createDonut(0xffff00, { x: 1, y: -1, z: 0 });
+createDonut(0xff6347, { x: 0, y: 1, z: 2 });
+createDonut(0x00ff00, { x: 2, y: 1, z: 2 }); 
+createDonut(0x0000ff, { x: -2, y: 1, z: 2 }); 
+createDonut(0xffff00, { x: 1, y: 1, z: 2 });
 
 // Camera Position
 camera.position.set(0, 0, 6);

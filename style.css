@@ -12,7 +12,6 @@ body {
   align-items: center;
   height: 100vh; 
   margin: 0;
-  margin-top: 5vh;;
 }
 #threejs-container {
   position: block;
