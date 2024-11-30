@@ -117,6 +117,11 @@ function renderFrame(){
 
     updatePhysics( deltaTime );
 
+
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(cylinders);
+
+
     if (moveDirection.left === 1) {
         applyForceToStream(-10, 0); // Adjust force and direction as needed
     }
@@ -135,43 +140,82 @@ function setupEventHandlers(){
 
     window.addEventListener( 'keydown', handleKeyDown, false);
     window.addEventListener( 'keyup', handleKeyUp, false);
+    window.addEventListener('click', onMouseClick, false);
 
+}
+
+function onMouseClick(event) {
+    // Convert screen coordinates to normalized device coordinates (-1 to +1)
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    // Perform raycasting
+    raycaster.setFromCamera(mouse, camera);
+
+    // Check for intersections
+    const intersects = raycaster.intersectObjects(cylinders);
+
+    if (intersects.length > 0) {
+        const clickedObject = intersects[0].object;
+        handleCylinderClick(clickedObject);
+    }
+}
+
+function handleCylinderClick(cylinder) {
+    if (cylinder === cylinders[0]) {
+        streamSettings.forceStrength = 60;
+        cylinders[0].scale.set(1, 0.5, 1);
+        setTimeout(() => {
+            streamSettings.forceStrength = 0;
+            cylinders[0].scale.set(1, 1, 1);
+        }, 200);
+    } else if (cylinder === cylinders[1]) {
+        streamSettingsR.forceStrength = 60;
+        cylinders[1].scale.set(1, 0.5, 1);
+        setTimeout(() => {
+            streamSettingsR.forceStrength = 0;
+            cylinders[1].scale.set(1, 1, 1);
+        }, 200);
+    }
 }
 
 
 function handleKeyDown(event){
 
-let keyCode = event.keyCode;
+    let keyCode = event.keyCode;
 
-switch(keyCode){
+    switch(keyCode){
 
-    case 37: 
-        streamSettings.forceStrength = 60;
-        break;
+        case 37: 
+            streamSettings.forceStrength = 60;
+            cylinders[0].scale.set(1, 0.5, 1);
+            break;
 
-    case 39: 
-        streamSettingsR.forceStrength = 60;
-        break;
+        case 39: 
+            streamSettingsR.forceStrength = 60;
+            cylinders[1].scale.set(1, 0.5, 1);
+            break;
 
-}
+    }
 }
 
 
 function handleKeyUp(event){
-let keyCode = event.keyCode;
+    let keyCode = event.keyCode;
 
-switch(keyCode){
-    case 37: 
-        streamSettings.forceStrength = 0;
-        break;
+    switch(keyCode){
+        case 37: 
+            streamSettings.forceStrength = 0;
+            cylinders[0].scale.set(1, 1, 1);
+            break;
 
-    case 39: 
-        streamSettingsR.forceStrength = 0;
-        break;
+        case 39: 
+            streamSettingsR.forceStrength = 0;
+            cylinders[1].scale.set(1, 1, 1);
+            break;
+    }
+
 }
-
-}
-
 
 function createBottomBlock(){
     
@@ -338,7 +382,7 @@ function createRing() {
     const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff0000, 0x00ff00, 0x0000ff, 0xffff00];
 
     colors.forEach((color, index) => {
-        let pos = { x: index * 3 -15 , y: 40, z: 0 }; // Adjust positions
+        let pos = { x: index * 3 -15 , y: 40, z: 0 };
 
         // Three.js Section
         let torus = new THREE.Mesh(
@@ -366,7 +410,7 @@ function createRing() {
         let compoundShape = new Ammo.btCompoundShape();
 
         // Approximate torus with spheres arranged in a circle
-        const numSegments = 30; // Number of segments to approximate the ring
+        const numSegments = 10; // Number of segments to approximate the ring
         const angleStep = (2 * Math.PI) / numSegments;
         const noCollisionRadius = 0.5; // No-collision column radius
 
@@ -417,6 +461,7 @@ function createRing() {
         torus.userData.physicsBody = body;
         rigidBodies.push(torus);
         torusObjects.push(torus);
+
     });
 }
 
@@ -624,7 +669,7 @@ function createSlides() {
     // Helper function to create a slide
     function createSlide(position, angle) {
         // Three.js Section: Create the slide
-        const slideWidth = 25;
+        const slideWidth = 26;
         const slideHeight = 2;
         const slideLength = 10;
         const slideGeometry = new THREE.BoxGeometry(slideWidth, slideHeight, slideLength);
@@ -664,6 +709,8 @@ function createSlides() {
     createSlide({ x: slideOffset, y: slideHeight, z: 0 }, -slideAngle);
 }
 
+let cylinders = [];
+
 function createButtons(){
     const geometry = new THREE.CylinderGeometry(5, 5, 4, 32);
     const material = new THREE.MeshPhongMaterial({
@@ -671,7 +718,7 @@ function createButtons(){
     });
     const cylinder = new THREE.Mesh(geometry, material);
 
-    cylinder.position.set(-20, -25, 15,);
+    cylinder.position.set(-20, -30, 5,);
 
     const dir = new THREE.Vector3(0, 0, 1);
     const axis = new THREE.Vector3(0, 1, 0); 
@@ -679,12 +726,17 @@ function createButtons(){
     cylinder.quaternion.copy(quaternion);
 
     scene.add(cylinder);
+    cylinders.push(cylinder);
 
     const cylinder2 = new THREE.Mesh(geometry, material);
 
-    cylinder2.position.set(20, -25, 15,);
+    cylinder2.position.set(20, -30, 5,);
     cylinder2.quaternion.copy(quaternion);
 
     scene.add(cylinder2);
-
+    cylinders.push(cylinder2);
 }
+
+
+let raycaster = new THREE.Raycaster();
+let mouse = new THREE.Vector2();
