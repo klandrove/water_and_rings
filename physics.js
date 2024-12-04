@@ -142,8 +142,21 @@ function setupEventHandlers(){
     window.addEventListener( 'keyup', handleKeyUp, false);
     window.addEventListener('click', onMouseClick, false);
     window.addEventListener('touchstart', onTouchStart, false);
+    window.addEventListener('resize', onWindowResize);
 
 }
+
+window.addEventListener('resize', onWindowResize);
+
+function onWindowResize() {
+    // Update camera aspect ratio and projection matrix
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    // Resize the renderer to match new dimensions
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
 
 function onMouseClick(event) {
     // Convert screen coordinates to normalized device coordinates (-1 to +1)
