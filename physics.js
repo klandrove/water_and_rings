@@ -141,6 +141,7 @@ function setupEventHandlers(){
     window.addEventListener( 'keydown', handleKeyDown, false);
     window.addEventListener( 'keyup', handleKeyUp, false);
     window.addEventListener('click', onMouseClick, false);
+    window.addEventListener('touchstart', onTouchStart, false);
 
 }
 
@@ -160,6 +161,27 @@ function onMouseClick(event) {
         handleCylinderClick(clickedObject);
     }
 }
+
+function onTouchStart(event) {
+    // Get the first touch point
+    const touch = event.touches[0];
+
+    // Convert touch coordinates to normalized device coordinates (-1 to +1)
+    mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+
+    // Perform raycasting
+    raycaster.setFromCamera(mouse, camera);
+
+    // Check for intersections
+    const intersects = raycaster.intersectObjects(cylinders);
+
+    if (intersects.length > 0) {
+        const clickedObject = intersects[0].object;
+        handleCylinderClick(clickedObject);
+    }
+}
+
 
 function handleCylinderClick(cylinder) {
     if (cylinder === cylinders[0]) {
