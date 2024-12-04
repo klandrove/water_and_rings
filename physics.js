@@ -163,6 +163,8 @@ function onMouseClick(event) {
 }
 
 function onTouchStart(event) {
+
+    event.preventDefault();
     // Get the first touch point
     const touch = event.touches[0];
 
