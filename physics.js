@@ -500,6 +500,7 @@ function createRing() {
         let rbInfo = new Ammo.btRigidBodyConstructionInfo(mass, motionState, compoundShape, localInertia);
         let body = new Ammo.btRigidBody(rbInfo);
 
+        body.setActivationState(4);
         body.setFriction(0.5);
         body.setRollingFriction(0.3);
 
