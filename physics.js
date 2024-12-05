@@ -1,18 +1,15 @@
-//variable declaration section
+// variables
 let physicsWorld, scene, camera, renderer, rigidBodies = [], tmpTrans = null
-let torusObjects = []; // Array to store references to all torus meshes
+let torusObjects = []; // stores all rings
 
 
-//physicsWorld: Manages the physics simulation in Ammo.js.
+// physicsWorld: Manages the physics simulation in Ammo.js.
 // scene: The 3D scene managed by Three.js.
 // camera: Defines the perspective view of the 3D scene.
 // renderer: Renders the scene using WebGL.
 // rigidBodies: An array of objects that have physics enabled.
 // tmpTrans: Temporary Ammo.js transformation object.
 
-
-let ballObject = null, 
-moveDirection = { left: 0, right: 0, forward: 0, back: 0 }
 const STATE = { DISABLE_DEACTIVATION : 4 }
 
 //Ammojs Initialization
@@ -20,6 +17,7 @@ Ammo().then(start)
 
 function start (){
 
+    // call functions to set up
     tmpTrans = new Ammo.btTransform();
     setupPhysicsWorld();
     setupGraphics();
@@ -28,6 +26,7 @@ function start (){
 
 }
 
+// sets up ammo.js physics world
 function setupPhysicsWorld(){
 
     let collisionConfiguration = new Ammo.btDefaultCollisionConfiguration(),
@@ -52,7 +51,7 @@ function setupGraphics(){
 
     //create camera
     camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.2, 5000 );
-    camera.position.set( 0, 25, 100 );
+    camera.position.set( 0, 15, 100 );
     camera.lookAt(new THREE.Vector3(0, 5, 0));
 
     //Add hemisphere light
@@ -69,12 +68,13 @@ function setupGraphics(){
     dirLight.position.multiplyScalar( 100 );
     scene.add( dirLight );
 
+    //Add point light
     const light = new THREE.PointLight(0xffffff, 1, 100);
     light.position.set(0, 10, 0);
     scene.add(light);
 
+    // Allow shadows
     dirLight.castShadow = true;
-
     dirLight.shadow.mapSize.width = 2048;
     dirLight.shadow.mapSize.height = 2048;
 
@@ -91,16 +91,22 @@ function setupGraphics(){
     renderer = new THREE.WebGLRenderer( { antialias: true } );
     renderer.setClearColor( 0xbfd1e5 );
     renderer.setPixelRatio( window.devicePixelRatio );
-    renderer.setSize( window.innerWidth, window.innerHeight );
-    document.body.appendChild( renderer.domElement );
+    // get threejs-container div
+    const container = document.getElementById('threejs-container');
+    // make canvas fit in the div
+    const rendererWidth = container.offsetWidth;
+    const rendererHeight = window.innerHeight;
+    renderer.setSize( rendererWidth, rendererHeight );
+    container.appendChild( renderer.domElement );
+
+    camera.aspect = rendererWidth / rendererHeight;
+    camera.updateProjectionMatrix();
 
     renderer.gammaInput = true;
     renderer.gammaOutput = true;
 
     renderer.shadowMap.enabled = true;
 
-    //createAngledStreamVisualization();
-    //createSecondStreamVisualization();
     createBottomBlock();
     createTopBlock();
     createHollowBoxConnection();
@@ -117,18 +123,9 @@ function renderFrame(){
 
     updatePhysics( deltaTime );
 
-
+    // set up raycaster
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObjects(cylinders);
-
-
-    if (moveDirection.left === 1) {
-        applyForceToStream(-10, 0); // Adjust force and direction as needed
-    }
-
-    if (moveDirection.right === 1) {
-        applyForceToStream(10, 0); // Adjust force and direction as needed
-    }
 
     renderer.render( scene, camera );
 
@@ -137,7 +134,7 @@ function renderFrame(){
 }
 
 function setupEventHandlers(){
-
+    // set up event handlers for keys, mouse, and tap
     window.addEventListener( 'keydown', handleKeyDown, false);
     window.addEventListener( 'keyup', handleKeyUp, false);
     window.addEventListener('click', onMouseClick, false);
@@ -146,29 +143,35 @@ function setupEventHandlers(){
 
 }
 
-window.addEventListener('resize', onWindowResize);
-
 function onWindowResize() {
-    // Update camera aspect ratio and projection matrix
-    camera.aspect = window.innerWidth / window.innerHeight;
+    // Determine whether the device is mobile or desktop
+    const isMobile = window.innerWidth <= 768; 
+
+    // Calculate renderer width (50% for desktop, 100% for mobile)
+    const rendererWidth = isMobile ? window.innerWidth : window.innerWidth * 0.5;
+    const rendererHeight = window.innerHeight;
+
+    // Update camera aspect ratio
+    camera.aspect = rendererWidth / rendererHeight;
     camera.updateProjectionMatrix();
 
-    // Resize the renderer to match new dimensions
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    // Resize the renderer
+    renderer.setSize(rendererWidth, rendererHeight);
 }
 
 
 function onMouseClick(event) {
     // Convert screen coordinates to normalized device coordinates (-1 to +1)
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
+    const bounds = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
+    mouse.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
     // Perform raycasting
     raycaster.setFromCamera(mouse, camera);
 
     // Check for intersections
     const intersects = raycaster.intersectObjects(cylinders);
 
+    // handle intersections
     if (intersects.length > 0) {
         const clickedObject = intersects[0].object;
         handleCylinderClick(clickedObject);
@@ -177,13 +180,16 @@ function onMouseClick(event) {
 
 function onTouchStart(event) {
 
+    // prevent scrolling
     event.preventDefault();
+
     // Get the first touch point
     const touch = event.touches[0];
 
     // Convert touch coordinates to normalized device coordinates (-1 to +1)
-    mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+    const bounds = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((touch.clientX - bounds.left) / bounds.width) * 2 - 1;
+    mouse.y = -((touch.clientY - bounds.top) / bounds.height) * 2 + 1;
 
     // Perform raycasting
     raycaster.setFromCamera(mouse, camera);
@@ -191,6 +197,7 @@ function onTouchStart(event) {
     // Check for intersections
     const intersects = raycaster.intersectObjects(cylinders);
 
+    // handle intersections
     if (intersects.length > 0) {
         const clickedObject = intersects[0].object;
         handleCylinderClick(clickedObject);
@@ -199,6 +206,7 @@ function onTouchStart(event) {
 
 
 function handleCylinderClick(cylinder) {
+    // check if left or right button and apply force to corresponding stream
     if (cylinder === cylinders[0]) {
         streamSettings.forceStrength = 60;
         cylinders[0].scale.set(1, 0.5, 1);
@@ -221,6 +229,7 @@ function handleKeyDown(event){
 
     let keyCode = event.keyCode;
 
+    // check if left or right arrow clicked and add force to corresponding stream
     switch(keyCode){
 
         case 37: 
@@ -240,6 +249,7 @@ function handleKeyDown(event){
 function handleKeyUp(event){
     let keyCode = event.keyCode;
 
+    // check if left or right arrow unclicked and remove force from corresponding stream
     switch(keyCode){
         case 37: 
             streamSettings.forceStrength = 0;
@@ -254,6 +264,7 @@ function handleKeyUp(event){
 
 }
 
+// Build bottom green section
 function createBottomBlock(){
     
     let pos = {x: 0, y: -30, z: 0};
@@ -271,7 +282,6 @@ function createBottomBlock(){
     blockPlane.receiveShadow = true;
 
     scene.add(blockPlane);
-
 
     //Ammojs Section
     let transform = new Ammo.btTransform();
@@ -295,6 +305,7 @@ function createBottomBlock(){
     physicsWorld.addRigidBody( body );
 }
 
+// create top green section
 function createTopBlock(){
     
     let pos = {x: 0, y: 50, z: 0};
@@ -312,7 +323,6 @@ function createTopBlock(){
     blockPlane.receiveShadow = true;
 
     scene.add(blockPlane);
-
 
     //Ammojs Section
     let transform = new Ammo.btTransform();
@@ -336,6 +346,7 @@ function createTopBlock(){
     physicsWorld.addRigidBody( body );
 }
 
+// create clear plastic section
 function createHollowBoxConnection() {
     const pos1 = { x: 0, y: -30, z: 0 }; // Bottom block position
     const scale1 = { x: 70, y: 30, z: 10 }; // Bottom block scale
@@ -373,7 +384,7 @@ function createHollowBoxConnection() {
         transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
 
         const motionState = new Ammo.btDefaultMotionState(transform);
-        const mass = 0; // Static wall
+        const mass = 0; 
         const localInertia = new Ammo.btVector3(0, 0, 0);
 
         const rbInfo = new Ammo.btRigidBodyConstructionInfo(mass, motionState, shape, localInertia);
@@ -382,6 +393,7 @@ function createHollowBoxConnection() {
     }
 
     let y_pos = 29;
+
     // Front wall
     createWall(
         { x: pos1.x, y: y_pos / 2, z: pos1.z + depth / 2 },
@@ -407,15 +419,15 @@ function createHollowBoxConnection() {
     );
 }
 
-
+// create rings
 function createRing() {
-    const radius = 2; // Radius of the ring
-    const tubeRadius = 0.6; // Radius of the tube (thickness of the ring)
-    const radialSegments = 16; // Number of radial segments (Three.js rendering)
-    const tubularSegments = 32; // Number of tubular segments (Three.js rendering)
-    const mass = 1; // Mass of the physics object
+    const radius = 2; 
+    const tubeRadius = 0.6;
+    const radialSegments = 16; 
+    const tubularSegments = 32; 
+    const mass = 1;
 
-    // Colors for the torus objects
+    // Colors for the rings
     const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff0000, 0x00ff00, 0x0000ff, 0xffff00];
 
     colors.forEach((color, index) => {
@@ -447,9 +459,9 @@ function createRing() {
         let compoundShape = new Ammo.btCompoundShape();
 
         // Approximate torus with spheres arranged in a circle
-        const numSegments = 10; // Number of segments to approximate the ring
+        const numSegments = 10; 
         const angleStep = (2 * Math.PI) / numSegments;
-        const noCollisionRadius = 0.5; // No-collision column radius
+        const noCollisionRadius = 0.5; 
 
         for (let i = 0; i < numSegments; i++) {
             const angle = i * angleStep;
@@ -488,7 +500,6 @@ function createRing() {
         let rbInfo = new Ammo.btRigidBodyConstructionInfo(mass, motionState, compoundShape, localInertia);
         let body = new Ammo.btRigidBody(rbInfo);
 
-        // Optional: add friction, rolling friction, etc.
         body.setFriction(0.5);
         body.setRollingFriction(0.3);
 
@@ -497,68 +508,84 @@ function createRing() {
         // Link physics to Three.js
         torus.userData.physicsBody = body;
         rigidBodies.push(torus);
-        torusObjects.push(torus);
-
     });
 }
-
-
 
 function createProngs() {
     const prongMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
 
-    // Helper function to create a prong
+    // create a tapered cylinder/prong
     function createProng(position) {
-        // Three.js Section: Create the tapered column
-        const topRadius = 0.5;
-        const bottomRadius = 2;
-        const height = 20;
+        // Three.js Section: Create the tapered cylinder
+        const topRadius = 0.5; // Radius at the top
+        const bottomRadius = 2; // Radius at the bottom
+        const height = 20; // Height of the tapered cylinder
         const radialSegments = 16;
+
+        // Create Three.js geometry
         const columnGeometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, radialSegments);
         const column = new THREE.Mesh(columnGeometry, prongMaterial);
         column.position.set(position.x, position.y + height / 2, position.z);
         scene.add(column);
 
-        // Ammo.js Section: Physics body for the tapered column
-        const columnShape = new Ammo.btConeShape(bottomRadius, height);
+        // Ammo.js Section: Create a convex hull for collision
+        const columnShape = new Ammo.btConvexHullShape();
+
+        // Access the vertices from the Three.js geometry
+        const vertices = columnGeometry.attributes.position.array; 
+        const scaleFactor = 0.2;
+        for (let i = 0; i < vertices.length; i += 3) {
+            let vx = vertices[i];
+            let vy = vertices[i + 1];
+            let vz = vertices[i + 2];
+
+            if (vy > 0) { 
+                vx = vx * scaleFactor; 
+                vz = vz * scaleFactor; 
+            }
+
+
+            columnShape.addPoint(new Ammo.btVector3(vx, vy, vz));
+        }
+
+        // Create Ammo.js rigid body
         const columnTransform = new Ammo.btTransform();
         columnTransform.setIdentity();
-        columnTransform.setOrigin(new Ammo.btVector3(position.x, position.y + height / 2, position.z));
+        columnTransform.setOrigin(new Ammo.btVector3(position.x, position.y + height / 2, position.z)); 
         const columnMotionState = new Ammo.btDefaultMotionState(columnTransform);
-        const columnMass = 0; // Static
+
+        const columnMass = 0;
         const columnLocalInertia = new Ammo.btVector3(0, 0, 0);
         const columnRbInfo = new Ammo.btRigidBodyConstructionInfo(columnMass, columnMotionState, columnShape, columnLocalInertia);
         const columnBody = new Ammo.btRigidBody(columnRbInfo);
+
+        // Add to the physics world
         physicsWorld.addRigidBody(columnBody);
     }
 
-    // Position the prongs in the middle of the hollow box
-    const prongOffset = 15; // Adjust this to place the prongs evenly spaced
+    
+    const prongOffset = 15; 
+    // Add to three.js scene
     createProng({ x: -prongOffset, y: 8, z: 0 });
-    createProng({ x: prongOffset, y: -3, z: 0 });
-
+    createProng({ x: prongOffset, y: -2, z: 0 });
 }
 
-
-
-function updatePhysics( deltaTime ){
-
-    // Step world
-    physicsWorld.stepSimulation( deltaTime, 10 );
+function updatePhysics(deltaTime) {
+    physicsWorld.stepSimulation(deltaTime, 10);
 
     // Update rigid bodies
-    for ( let i = 0; i < rigidBodies.length; i++ ) {
-        let objThree = rigidBodies[ i ];
+    for (let i = 0; i < rigidBodies.length; i++) {
+        let objThree = rigidBodies[i];
         let objAmmo = objThree.userData.physicsBody;
         let ms = objAmmo.getMotionState();
-        if ( ms ) {
-
-            ms.getWorldTransform( tmpTrans );
+        if (ms) {
+            ms.getWorldTransform(tmpTrans);
             let p = tmpTrans.getOrigin();
             let q = tmpTrans.getRotation();
-            objThree.position.set( p.x(), p.y(), p.z() );
-            objThree.quaternion.set( q.x(), q.y(), q.z(), q.w() );
+            objThree.position.set(p.x(), p.y(), p.z());
+            objThree.quaternion.set(q.x(), q.y(), q.z(), q.w());
 
+            // Apply stream forces
             if (isWithinStream(objThree, streamSettings)) {
                 applyStreamForce(objThree, streamSettings);
             }
@@ -567,24 +594,27 @@ function updatePhysics( deltaTime ){
                 applyStreamForce(objThree, streamSettingsR);
             }
 
+            // Check for ring-and-prong interactions
+            if (objThree.name === "ring") {
+                adjustRingIfOnProng(objAmmo);
+            }
         }
     }
-
 }
 
 const streamSettings  = {
     origin: { x: -28.5, y: -20, z: 0 },
-    radius: 6, // Radius of the circular column
-    height: 50, // Height of the stream
-    forceStrength: 0, // Upward force magnitude
+    radius: 6, 
+    height: 50,
+    forceStrength: 0,
     direction: { x: 0.1, y: 1, z: 0 },
 };
 
 const streamSettingsR  = {
     origin: { x: 28.5, y: -20, z: 0 },
-    radius: 6, // Radius of the circular column
-    height: 50, // Height of the stream
-    forceStrength: 0, // Upward force magnitude
+    radius: 6, 
+    height: 50,
+    forceStrength: 0, 
     direction: { x: -0.1, y: 1, z: 0 },
 };
 
@@ -601,7 +631,7 @@ streamSettings.direction = normalizeVector(streamSettings.direction);
 
 streamSettingsR.direction = normalizeVector(streamSettingsR.direction);
 
-
+// check if the ring is in the stream
 function isWithinStream(object, stream) {
     const position = object.position;
     const dx = position.x - stream.origin.x;
@@ -614,12 +644,14 @@ function isWithinStream(object, stream) {
     );
 }
 
+// apply force to ring
 function applyStreamForce(object, stream) {
     const position = object.position;
     const verticalPosition = position.y - stream.origin.y;
-    const normalizedHeight = verticalPosition / stream.height; // 0 at bottom, 1 at top
-
-    const adjustedForceStrength = stream.forceStrength * (1 - normalizedHeight); // Decrease force at top
+    const normalizedHeight = verticalPosition / stream.height; 
+    
+    // Decrease force at top pf stream
+    const adjustedForceStrength = stream.forceStrength * (1 - normalizedHeight); 
 
     const direction = new Ammo.btVector3(
         stream.direction.x * adjustedForceStrength,
@@ -630,90 +662,20 @@ function applyStreamForce(object, stream) {
     physicsBody.applyCentralForce(direction);
 }
 
-
-function createAngledStreamVisualization() {
-    const geometry = new THREE.CylinderGeometry(
-        streamSettings.radius,
-        streamSettings.radius,
-        streamSettings.height,
-        32
-    );
-    const material = new THREE.MeshBasicMaterial({
-        color: 0x00ffff,
-        transparent: true,
-        opacity: 0.3,
-    });
-    const cylinder = new THREE.Mesh(geometry, material);
-
-    // Set the cylinder's position
-    cylinder.position.set(
-        streamSettings.origin.x,
-        streamSettings.origin.y + streamSettings.height / 2,
-        streamSettings.origin.z
-    );
-
-    // Rotate the cylinder to match the stream's direction
-    const dir = new THREE.Vector3(
-        streamSettings.direction.x,
-        streamSettings.direction.y,
-        streamSettings.direction.z
-    );
-    const axis = new THREE.Vector3(0, 1, 0); // Default cylinder direction (upward)
-    const quaternion = new THREE.Quaternion().setFromUnitVectors(axis, dir.normalize());
-    cylinder.quaternion.copy(quaternion);
-
-    scene.add(cylinder);
-}
-
-function createSecondStreamVisualization() {
-    const geometry = new THREE.CylinderGeometry(
-        streamSettingsR.radius,
-        streamSettingsR.radius,
-        streamSettingsR.height,
-        32
-    );
-    const material = new THREE.MeshBasicMaterial({
-        color: 0xff00ff, // Different color for distinction
-        transparent: true,
-        opacity: 0.3,
-    });
-    const cylinder = new THREE.Mesh(geometry, material);
-
-    // Set the cylinder's position
-    cylinder.position.set(
-        streamSettingsR.origin.x,
-        streamSettingsR.origin.y + streamSettingsR.height / 2,
-        streamSettingsR.origin.z
-    );
-
-    // Rotate the cylinder to match the second stream's direction
-    const dir = new THREE.Vector3(
-        streamSettingsR.direction.x,
-        streamSettingsR.direction.y,
-        streamSettingsR.direction.z
-    );
-    const axis = new THREE.Vector3(0, 1, 0);
-    const quaternion = new THREE.Quaternion().setFromUnitVectors(axis, dir.normalize());
-    cylinder.quaternion.copy(quaternion);
-
-    scene.add(cylinder);
-}
-
-
+// create the white slides at the bottom
 function createSlides() {
     const slideMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff });
 
-    // Helper function to create a slide
     function createSlide(position, angle) {
         // Three.js Section: Create the slide
-        const slideWidth = 26;
+        const slideWidth = 29;
         const slideHeight = 2;
         const slideLength = 10;
         const slideGeometry = new THREE.BoxGeometry(slideWidth, slideHeight, slideLength);
         const slide = new THREE.Mesh(slideGeometry, slideMaterial);
 
         slide.position.set(position.x, position.y, position.z);
-        slide.rotation.z = angle; // Rotate slide around the Z-axis
+        slide.rotation.z = angle;
         scene.add(slide);
 
         // Ammo.js Section: Physics body for the slide
@@ -723,11 +685,11 @@ function createSlides() {
         slideTransform.setIdentity();
         slideTransform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
         const quat = new Ammo.btQuaternion();
-        quat.setEulerZYX(angle, 0, 0); // Apply Z-axis rotation
+        quat.setEulerZYX(angle, 0, 0); 
         slideTransform.setRotation(quat);
 
         const slideMotionState = new Ammo.btDefaultMotionState(slideTransform);
-        const slideMass = 0; // Static
+        const slideMass = 0;
         const slideLocalInertia = new Ammo.btVector3(0, 0, 0);
         const slideRbInfo = new Ammo.btRigidBodyConstructionInfo(slideMass, slideMotionState, slideShape, slideLocalInertia);
         const slideBody = new Ammo.btRigidBody(slideRbInfo);
@@ -735,9 +697,9 @@ function createSlides() {
     }
 
     // Position the slides symmetrically at the bottom
-    const slideOffset = 11; // Adjust to place the slides symmetrically
-    const slideHeight = -8; // Adjust for placement at the bottom
-    const slideAngle = Math.PI / 6; // 30 degrees incline
+    const slideOffset = 12; 
+    const slideHeight = -9; 
+    const slideAngle = Math.PI / 6;
 
     // Left slide
     createSlide({ x: -slideOffset, y: slideHeight, z: 0 }, slideAngle);
@@ -746,8 +708,10 @@ function createSlides() {
     createSlide({ x: slideOffset, y: slideHeight, z: 0 }, -slideAngle);
 }
 
+// keep track of the buttons
 let cylinders = [];
 
+// create buttons
 function createButtons(){
     const geometry = new THREE.CylinderGeometry(5, 5, 4, 32);
     const material = new THREE.MeshPhongMaterial({

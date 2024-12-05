@@ -3,16 +3,31 @@
    <head>
       <meta charset="UTF-8" />
       <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
       <title>Water Ring Game</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Short+Stack&display=swap" rel="stylesheet">
       <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.js"></script>
 	  <link rel="stylesheet" href="style.css" />
    </head>
    <body>
-      <div id="threejs-container"></div>
-      <!-- <script src="main.js"></script> -->
-	  <script src="ammo.js"></script>
-      <script src="physics.js"></script>
+      <div>
+         <h1>
+            Water Ring Game
+         </h1>
+      </div>
+      <div class="main">
+         <div class="instructions">
+            <h3>How to Play:</h3>
+            <p>Use the left and right arrow keys to push the rings upwards.</p>
+            <p>Alternatively, tap the yellow buttons to activate the water streams.</p>
+            <p>Refresh the page to restart.</p>
+         </div>
+         <div id="threejs-container"></div>
+         <script src="ammo.js"></script>
+         <script src="physics.js"></script>
+      </div>
    </body>
 </html>
