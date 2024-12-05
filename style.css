@@ -60,6 +60,7 @@ h1 {
   font-family: "Short Stack", cursive;
   font-weight: 400;
   font-size: 3rem;
+  padding-top: 1rem;
 }
 
 @media (max-width: 768px) {
